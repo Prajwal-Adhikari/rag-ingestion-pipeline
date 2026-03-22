@@ -1,19 +1,15 @@
-use sqlx::postgres::PgPoolOptions;
+use common::create_pool;
 use teloxide::{net::Download, prelude::*};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
     log::info!("Starting doctor...");
 
     let bot = Bot::from_env();
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set");
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
-        .await?;
+
+    let pool = create_pool().await?;
     teloxide::repl(bot, move |bot: Bot, msg: Message| {
         let pool = pool.clone();
         async move {

@@ -1,0 +1,12 @@
+[package]
+name = "bot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common      = { path = "../common" }
+teloxide  = { version = "0.17", features = ["macros"] }
+tokio     = { version = "1", features = ["rt-multi-thread", "macros", "fs"] }
+log       = "0.4"
+pretty_env_logger = "0.5"
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono"] }
