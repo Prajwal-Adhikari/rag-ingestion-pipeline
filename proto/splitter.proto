@@ -1,0 +1,15 @@
+syntax = "proto3";
+package splitter;
+
+service Splitter {
+  rpc Split (SplitRequest) returns (SplitResponse);
+}
+
+message SplitRequest {
+  string text = 1;
+
+}
+
+message SplitResponse {
+  repeated string sentences = 1;
+}

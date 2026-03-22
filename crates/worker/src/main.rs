@@ -3,10 +3,20 @@ use sqlx::{types::uuid, PgPool};
 use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
+use crate::chunker::SemanticChunker;
+mod chunker;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
     log::info!("Worker Starting");
+
+    //testing python sidecar sentence splitter
+    let mut chunker = SemanticChunker::new().await?;
+    let sentences = chunker
+        .chunk("Dr. Smith went to the store. He bought apples. The weather was nice. This is a localhost -> 127.0.0.1:8080")
+        .await?;
+    println!("Total: {} sentences", sentences.len());
 
     let pool = create_pool().await?;
     loop {
