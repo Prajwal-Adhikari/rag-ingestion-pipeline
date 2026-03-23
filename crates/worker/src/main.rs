@@ -12,18 +12,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Worker Starting");
 
     //testing python sidecar sentence splitter
-    let mut chunker = SemanticChunker::new().await?;
-    let sentences = chunker
-        .chunk("Dr. Smith went to the store. He bought apples. The weather was nice. This is a localhost -> 127.0.0.1:8080")
-        .await?;
-    println!("Total: {} sentences", sentences.len());
+    let mut chunker = SemanticChunker::new(400, 0.2).await?;
 
     let pool = create_pool().await?;
     loop {
         match pick_job(&pool).await {
             Some(job) => {
                 log::info!("Processing job: {} ({})", job.id, job.file_name);
-                match process_job(&pool, &job).await {
+                match process_job(&pool, &job, &mut chunker).await {
                     Ok(_) => {
                         mark_done(&pool, job.id).await;
                         log::info!("Job {} done", job.id);
@@ -59,7 +55,11 @@ async fn pick_job(pool: &PgPool) -> Option<Job> {
     .flatten()
 }
 
-async fn process_job(pool: &PgPool, job: &Job) -> Result<(), Box<dyn std::error::Error>> {
+async fn process_job(
+    pool: &PgPool,
+    job: &Job,
+    chunker: &mut SemanticChunker,
+) -> Result<(), Box<dyn std::error::Error>> {
     //Mark as processing
     sqlx::query!(
         "UPDATE jobs SET status = 'processing' WHERE id = $1",
@@ -72,6 +72,8 @@ async fn process_job(pool: &PgPool, job: &Job) -> Result<(), Box<dyn std::error:
     log::info!("Extracted {} characters from {}", text.len(), job.file_name);
     println!("{}", &text[..500.min(text.len())]);
 
+    let chunks = chunker.chunk(&text).await?;
+    log::info!("Got {} chunks for {}", chunks.len(), job.file_name);
     Ok(())
 }
 
